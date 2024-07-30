@@ -11,8 +11,23 @@
     <p><button id="alice">Create Alice and write</button></p>
     <p>Enter DID to read from: <input id="did" type="text" /></p>
     <p><button id="bob">Create Bob and read</button></p>
+    <p>Bob DID <input id="bob-did" type="text" /></p>
+    <p><button id="wipe">Wipe</button></p>
 
     <script>
+      async function wipe() {
+        // Clear all data from IndexedDb
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DID_RESOLVERCACHE");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_DATASTORE");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_EVENTLOG");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGEINDEX");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGESTORE");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/VAULT_STORE");
+      }
+
+      document.getElementById('wipe').addEventListener('click', wipe);
+
       const protocolDefinition = {
         published: true,
         protocol: "https://schema.ariton.app/profile",
@@ -34,9 +49,6 @@
         },
       };
 
-      //   async function connectWeb5() {}
-      //   connectWeb5();
-
       document.getElementById("alice").addEventListener("click", async () => {
         const { web5, did: userDid } = await Web5.Web5.connect();
         console.log(web5, userDid);
@@ -55,8 +67,7 @@
             data: { name: "Alice" },
             message: {
               // published: true,
-              //   recipient: bobDid.uri,
-              // recipient: aliceDid.uri,
+              // recipient: 'did:dht:oo17cniorwpsnx4mmpepg3h91etuh1h8eefwahftaisx6a46ds9o',
               protocol: protocolDefinition.protocol,
               protocolPath: "profile",
               schema: protocolDefinition.types.profile.schema,
@@ -65,6 +76,11 @@
           });
 
         console.log("profileCreateStatus", profileCreateStatus, writerRecord);
+
+        // Write the record to external DWN immediately.
+        const { status: publishStatus } = await writerRecord.send(userDid);
+
+        console.log("publishStatus", publishStatus);
 
         document.getElementById("did").value = userDid;
       });
@@ -77,6 +93,7 @@
         console.log(web5, userDid);
 
         console.log("Creating query...");
+        document.getElementById("bob-did").value = userDid;
 
         const response = await web5.dwn.records.query({
           from: targetDid,
@@ -84,26 +101,13 @@
             filter: {
               protocol: protocolDefinition.protocol,
               protocolPath: "profile",
-              dataFormat: "application/json",
-              schema: "https://schema.ariton.app/profile/schema/profile",
+              schema: protocolDefinition.types.profile.schema,
+              dataFormat: protocolDefinition.types.profile.dataFormats[0],
             },
           },
         });
 
         console.log("response", response);
-
-        // const { status: profileReadStatus, record: readerRecord } =
-        //   await web5.dwn.records.query({
-        //     from: targetDid,
-        //     message: {
-        //       protocol: protocolDefinition.protocol,
-        //       protocolPath: "profile",
-        //       schema: protocolDefinition.types.profile.schema,
-        //       dataFormat: protocolDefinition.types.profile.dataFormats[0],
-        //     },
-        //   });
-
-        // console.log("profileReadStatus", profileReadStatus, readerRecord);
       });
     </script>
   </body>
