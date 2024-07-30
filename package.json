@@ -1,0 +1,13 @@
+{
+  "name": "web5-public-read",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "alice": "http-server -p 8080",
+    "bob": "http-server -p 8081",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT"
+}

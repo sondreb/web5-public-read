@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web5 Public Read example</title>
+    <script src="https://unpkg.com/@web5/api@0.10.0/dist/browser.js"></script>
+  </head>
+  <body>
+    <h1>Web5 Public Read</h1>
+    <p><button id="alice">Create Alice and write</button></p>
+    <p>Enter DID to read from: <input id="did" type="text" /></p>
+    <p><button id="bob">Create Bob and read</button></p>
+
+    <script>
+      const protocolDefinition = {
+        published: true,
+        protocol: "https://schema.ariton.app/profile",
+        types: {
+          profile: {
+            schema: "https://schema.ariton.app/profile/schema/profile",
+            dataFormats: ["application/json"],
+          },
+        },
+        structure: {
+          profile: {
+            $actions: [
+              {
+                who: "anyone",
+                can: ["read"],
+              },
+            ],
+          },
+        },
+      };
+
+      //   async function connectWeb5() {}
+      //   connectWeb5();
+
+      document.getElementById("alice").addEventListener("click", async () => {
+        const { web5, did: userDid } = await Web5.Web5.connect();
+        console.log(web5, userDid);
+
+        const { status: protocolStatus, protocol: profileProtocol } =
+          await web5.dwn.protocols.configure({
+            message: {
+              definition: protocolDefinition,
+            },
+          });
+
+        console.log("protocolStatus", protocolStatus);
+
+        const { status: profileCreateStatus, record: writerRecord } =
+          await web5.dwn.records.create({
+            data: { name: "Alice" },
+            message: {
+              // published: true,
+              //   recipient: bobDid.uri,
+              // recipient: aliceDid.uri,
+              protocol: protocolDefinition.protocol,
+              protocolPath: "profile",
+              schema: protocolDefinition.types.profile.schema,
+              dataFormat: protocolDefinition.types.profile.dataFormats[0],
+            },
+          });
+
+        console.log("profileCreateStatus", profileCreateStatus, writerRecord);
+
+        document.getElementById("did").value = userDid;
+      });
+
+      document.getElementById("bob").addEventListener("click", async () => {
+        const targetDid = document.getElementById("did").value;
+        console.log("DID", targetDid);
+
+        const { web5, did: userDid } = await Web5.Web5.connect();
+        console.log(web5, userDid);
+
+        console.log("Creating query...");
+
+        const response = await web5.dwn.records.query({
+          from: targetDid,
+          message: {
+            filter: {
+              protocol: protocolDefinition.protocol,
+              protocolPath: "profile",
+              dataFormat: "application/json",
+              schema: "https://schema.ariton.app/profile/schema/profile",
+            },
+          },
+        });
+
+        console.log("response", response);
+
+        // const { status: profileReadStatus, record: readerRecord } =
+        //   await web5.dwn.records.query({
+        //     from: targetDid,
+        //     message: {
+        //       protocol: protocolDefinition.protocol,
+        //       protocolPath: "profile",
+        //       schema: protocolDefinition.types.profile.schema,
+        //       dataFormat: protocolDefinition.types.profile.dataFormats[0],
+        //     },
+        //   });
+
+        // console.log("profileReadStatus", profileReadStatus, readerRecord);
+      });
+    </script>
+  </body>
+</html>
