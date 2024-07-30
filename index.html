@@ -9,6 +9,7 @@
   <body>
     <h1>Web5 Public Read</h1>
     <p><button id="alice">Create Alice and write</button></p>
+    <p>Record ID: <input id="rid" type="text" /></p>
     <p>Enter DID to read from: <input id="did" type="text" /></p>
     <p><button id="bob">Create Bob and read</button></p>
     <p>Bob DID <input id="bob-did" type="text" /></p>
@@ -24,10 +25,12 @@
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGEINDEX");
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGESTORE");
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/VAULT_STORE");
-        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_RESUMABLETASKSTORE");
+        await indexedDB.deleteDatabase(
+          "level-js-DATA/AGENT/DWN_RESUMABLETASKSTORE"
+        );
       }
 
-      document.getElementById('wipe').addEventListener('click', wipe);
+      document.getElementById("wipe").addEventListener("click", wipe);
 
       const protocolDefinition = {
         published: true,
@@ -65,7 +68,7 @@
 
         const result = await profileProtocol.send(userDid);
 
-        console.log('Protocol send result', result);
+        console.log("Protocol send result", result);
 
         const { status: profileCreateStatus, record: writerRecord } =
           await web5.dwn.records.create({
@@ -88,11 +91,14 @@
         console.log("publishStatus", publishStatus);
 
         document.getElementById("did").value = userDid;
+        document.getElementById("rid").value = writerRecord.id;
       });
 
       document.getElementById("bob").addEventListener("click", async () => {
+        const recordId = document.getElementById("rid").value;
         const targetDid = document.getElementById("did").value;
         console.log("DID", targetDid);
+        console.log("RID", recordId);
 
         const { web5, did: userDid } = await Web5.Web5.connect();
         console.log(web5, userDid);
@@ -100,19 +106,40 @@
         console.log("Creating query...");
         document.getElementById("bob-did").value = userDid;
 
-        const response = await web5.dwn.records.query({
-          from: targetDid,
-          message: {
-            filter: {
-              protocol: protocolDefinition.protocol,
-              protocolPath: "profile",
-              schema: protocolDefinition.types.profile.schema,
-              dataFormat: protocolDefinition.types.profile.dataFormats[0],
-            },
-          },
-        });
+        if (recordId) {
+          // const response = await web5.dwn.records.query({
+          //   from: targetDid,
+          //   message: {
+          //     filter: {
+          //       recordId: recordId,
+          //     },
+          //   },
+          // });
 
-        console.log("response", response);
+          const response = await web5.dwn.records.read({
+            message: {
+              filter: {
+                recordId: recordId,
+              },
+            },
+          });
+
+          console.log("response", response);
+        } else {
+          const response = await web5.dwn.records.query({
+            from: targetDid,
+            message: {
+              filter: {
+                protocol: protocolDefinition.protocol,
+                protocolPath: "profile",
+                schema: protocolDefinition.types.profile.schema,
+                dataFormat: protocolDefinition.types.profile.dataFormats[0],
+              },
+            },
+          });
+
+          console.log("response", response);
+        }
       });
     </script>
   </body>
