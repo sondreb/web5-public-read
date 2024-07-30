@@ -24,6 +24,7 @@
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGEINDEX");
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_MESSAGESTORE");
         await indexedDB.deleteDatabase("level-js-DATA/AGENT/VAULT_STORE");
+        await indexedDB.deleteDatabase("level-js-DATA/AGENT/DWN_RESUMABLETASKSTORE");
       }
 
       document.getElementById('wipe').addEventListener('click', wipe);
@@ -62,11 +63,15 @@
 
         console.log("protocolStatus", protocolStatus);
 
+        const result = await profileProtocol.send(userDid);
+
+        console.log('Protocol send result', result);
+
         const { status: profileCreateStatus, record: writerRecord } =
           await web5.dwn.records.create({
             data: { name: "Alice" },
             message: {
-              // published: true,
+               published: true,
               // recipient: 'did:dht:oo17cniorwpsnx4mmpepg3h91etuh1h8eefwahftaisx6a46ds9o',
               protocol: protocolDefinition.protocol,
               protocolPath: "profile",
